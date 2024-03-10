@@ -147,7 +147,7 @@ def main():
 
     st.markdown("Inject In ")
 
-    total_seconds = st.sidebar.number_input("Set total duration (seconds):", min_value=1, value=60)
+    total_seconds = st.sidebar.number_input("Set total duration (seconds):", min_value=1, value=21600)
 
     start_time = st.session_state.get('start_time', datetime.now())
     st.session_state.start_time = start_time
