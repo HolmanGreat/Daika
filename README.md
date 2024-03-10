@@ -22,8 +22,6 @@ Daika's interactive dashboard offers a comprehensive view of key health metrics,
 - **Medication Reminders:** Set timers to ensure timely administration of medications and treatments.
 
 
-
-
 ## Feedback and Support
 
 We value your feedback and are dedicated to continuously improving Daika to better meet your needs. If you have any questions, suggestions, or encounter any issues while using Daika, please don't hesitate to reach out to our support team.
