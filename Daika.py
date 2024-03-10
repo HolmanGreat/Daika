@@ -146,7 +146,7 @@ def main():
     bp_chart = pd.DataFrame(data, columns = ["Systolic_BP","Diastolic_BP"])
     st.line_chart(bp_chart)
 
-    st.markdown("Inject In ")
+    st.markdown("Inject Insulin In: ")
 
     total_seconds = st.sidebar.number_input("Set total duration (seconds):", min_value=1, value=21600)
 
