@@ -28,4 +28,6 @@ We value your feedback and are dedicated to continuously improving Daika to bett
 
 Start your journey to better health with Daika today!💪
 
-[Get Started with Daika](#)
+Get started with Daika!
+
+[https://daikaa.streamlit.app/](#)
