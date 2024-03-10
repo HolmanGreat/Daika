@@ -132,6 +132,7 @@ def create_donut_chart(seconds_remaining, total_seconds):
 #Main function
 def main():
     #Blood glucose metrics
+    st.title("Daika")
     st.markdown("### Your Metrics")
     col1, col2, col3 = st.columns(3)
     col1.metric(label = "Glucose levels", value = glucose_str , delta = "1.2")
