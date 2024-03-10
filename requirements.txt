@@ -1,0 +1,7 @@
+faker
+csv
+streamlit
+plost
+pandas
+numpy
+scikit-learn
