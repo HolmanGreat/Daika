@@ -1,5 +1,4 @@
 faker
-csv
 streamlit
 plost
 pandas
