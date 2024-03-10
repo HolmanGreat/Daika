@@ -148,6 +148,7 @@ def main():
 
     st.markdown("Inject Insulin In: ")
 
+    st.sidebar.title("Daika")
     total_seconds = st.sidebar.number_input("Set total duration (seconds):", min_value=1, value=21600)
 
     start_time = st.session_state.get('start_time', datetime.now())
