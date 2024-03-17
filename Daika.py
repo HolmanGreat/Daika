@@ -1,15 +1,10 @@
 #Importing dependencies 
-import random
-import csv
 import streamlit as st
 import plost
 import pandas as pd
 import numpy as np
 import altair as alt
-
 from datetime import datetime
-from faker import Faker
-from faker.providers import BaseProvider
 
 
 from sklearn.linear_model import LogisticRegression
@@ -22,68 +17,147 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder
 
 
-#________Uploading data_________
+
+
+#Daika Dashboard
+
+#__________Uploading Data__________
 
 # Define column names
-columns = ["Systolic_BP", "Diastolic_BP", "Glucose(mg/dL)", "Insulin (mmol–¹)"]
+columns = ["Systolic_BP", "Diastolic_BP", "Glucose(mg/dL)"]
 
 # Generate random numbers for DataFrame
-biochem_data = np.random.randint(40, 250, size=(60, len(columns)))
-dka_risk = np.random.randint(0, 2, size=(60, 1))
+biochem_data = np.random.randint(40, 250, size=(61, len(columns)))
 
-
-# Map 0 to 'No Risk' and 1 to 'At Rísk'
-dka_risk = np.where(dka_risk == 0, 'No Risk', 'At Risk')
-
-# Combine the biochem_data with the dka_risk
-data_combined = np.concatenate((biochem_data, dka_risk), axis=1)
-
-# Create DataFrame without indexes
-df = pd.DataFrame(data_combined, columns=columns + ['DKA Risk'], index=None)
+#Convert biochem_data to a Dataframe
+data = pd.DataFrame(biochem_data, columns = columns)
 
 
 
+#Refine Systolic_BP and Diastolic_BP data
 
-#Convert Systolic_BP, Diastolic_BP, Glucose, Insulin to numerical data
-data = df[["Systolic_BP", "Diastolic_BP","Glucose(mg/dL)", "Insulin (mmol–¹)"]].astype('int64')
-data = pd.DataFrame(data)
-
+df = data[["Systolic_BP", "Diastolic_BP","Glucose(mg/dL)"]].astype('int64')
+df = pd.DataFrame(df)
 
 #Convert Diastolic_BP to 2/3 Systolic_BP
-data["Diastole"] = data["Systolic_BP"]*2/3
-data["Diastolic_BP"] = data["Diastole"]
-data["Diastolic_BP"] = np.ceil(data["Diastolic_BP"])
-data.drop(columns=["Diastole"], inplace=True)
+df["Diastole"] = df["Systolic_BP"]*2/3
+df["Diastolic_BP"] = df["Diastole"]
+df["Diastolic_BP"] = np.ceil(df["Diastolic_BP"])
 
-#Add "DKA Risk" column to dataset
-data = data.join(df["DKA Risk"])
+df.drop(columns=["Diastole"], inplace=True)
 
 
 
-#Glucose level
-glucose_value = data.iloc[59:60, 2].values[0]
-glucose_str = str(glucose_value)+ "mg/dL"
+
+#Data for Ketone values
+ketone_data = np.random.randint(0.02,30.8, size = (61))
 
 
-#Blood pressure (systolic blood pressure, diastolic blood pressure)
-sbp_value = data.iloc[59:60, 0].values[0]
-dbp_value = data.iloc[59:60, 1].values[0]
+#_______Convert ketone_data to a dataframe_____
+ketone_pd = pd.DataFrame(ketone_data, columns=['ketone_value'])
+
+# Initialize an empty list to store messages
+messages = []
+
+for k in ketone_pd['ketone_value']:
+    if k < 12.4:
+        messages.append("No Risk")
+    elif 12.4 <= k < 15.5:
+        messages.append("Moderate Risk")
+    elif 15.5 <= k <=20:
+        messages.append("DKA")
+    elif k > 20:
+        messages.append("DKA...High Ketones")
+    else:
+        messages.append(" ")
+
+# Add the messages list as a new column to the DataFrame
+#ketone_pd["message"] = messages
+ketone_pd["Risk"] = messages
+
+
+#___Join biochem data & ketone data to form a single data frame___
+df = df.join(ketone_pd)
+
+
+#________PARAMETERS TO MONITOR__________
+# Blood Pressure
+sbp_value = df.iloc[59:60, 0].values[0]
+dbp_value = df.iloc[59:60, 1].values[0]
 sbp_str = str(sbp_value)
 dbp_str = str(dbp_value)
+BP = sbp_str + "/" + dbp_str+ "mmHg"
 
-#Blood pressure value
-BP = sbp_str + "/" + dbp_str+ " mmHg"
+
+#_______Ketone Levels_______
+ketone_level = df.iloc[59:60, 3].values[0]
+ketone_str = str(ketone_level) + "mmol/L"
+
+# Differences in ketone values at 60sec and 59sec
+ketone_val = []  # Initialize an empty list
+# Extracting the ketone values at 59secs and 60secs
+ketone59 = int(df["ketone_value"].iloc[59])
+ketone60 = int(df["ketone_value"].iloc[60])
+
+delta = ketone60 - ketone59
+delta_str = str(delta)
+
+
+warning= ""
+if ketone60  > ketone59:
+    warning = "+" + delta_str + "units"
+
+elif ketone60 < ketone59:
+    warning = delta_str + "units"
+
+else:
+    print("")
+
+
+
+#______Glucose Levels______
+glucose_value = df.iloc[59:60, 2].values[0]
+glucose_str = str(glucose_value)+ "mg/dL"
+
+# Differences in glucose values at 60sec and 59sec
+
+glucose_val = []  # Initialize an empty list
+# Extracting the glucose values at 59secs and 60secs
+glucose59 = int(df["Glucose(mg/dL)"].iloc[59])
+glucose60 = int(df["Glucose(mg/dL)"].iloc[60])
+
+glu_delta = glucose60 - glucose59
+glu_delta_str = str(glu_delta)
+
+
+glu_warning= ""
+if glucose60  > glucose59:
+    glu_warning = "+" + glu_delta_str + "units"
+
+elif glucose60 < glucose59:
+    glu_warning = glu_delta_str + "units"
+
+else:
+    print("")
+
+
+
+
+
+
+
 
 
 
 #____Logistic Regression Model To Predict Risk Of DKA Occuring_____
+
 # Split data into features(X) and target(y)
-X = data.iloc[:, 0:4].values
-y = data.iloc[:, 4].values
+X = df.iloc[:, 0:4].values
+y = df.iloc[:, 4].values
 
 
 # Create training and test sets from data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Initialize model
 model = LogisticRegression()
@@ -96,16 +170,17 @@ y_pred = model.predict(X_test)
 
 
 #Evaluate LogisticRegression Model
+
 accuracy = accuracy_score(y_test, y_pred)
-
-#Model accuracy 
 #print("Model Accuracy:", accuracy)
-
-#Predict risk of DKA
 risk = y_pred[-1]
 
 
 
+
+
+
+#_______DAIKA USER INTERFACE_______
 
 
 
@@ -127,18 +202,18 @@ def create_donut_chart(seconds_remaining, total_seconds):
 
     return chart
 
-#Daika User Interface 
+
 
 #Main function
 def main():
-    #Blood glucose metrics
-    st.title("Daika")
-    st.markdown("### Your Metrics")
-    col1, col2, col3 = st.columns(3)
-    col1.metric(label = "Glucose levels", value = glucose_str , delta = "1.2")
-    col2.metric(label = "DKA", value = risk , delta = "-0.002")
-    col3.metric(label = "B.P", value = BP)
 
+    #Blood glucose metrics
+    st.markdown("### Your Metrics")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric(label = "Glucose Levels", value = glucose_str)
+    col2.metric(label = "DKA Risk", value = risk)
+    col3.metric(label = "B.P", value = BP)
+    col4.metric(label = "Ketones", value = ketone_str, delta = warning)
 
 
     #Blood pressure metrics
@@ -146,10 +221,9 @@ def main():
     bp_chart = pd.DataFrame(data, columns = ["Systolic_BP","Diastolic_BP"])
     st.line_chart(bp_chart)
 
-    st.markdown("Inject Insulin In: ")
+    st.markdown("Inject In ")
 
-    st.sidebar.title("Daika")
-    total_seconds = st.sidebar.number_input("Set total duration (seconds):", min_value=1, value=21600)
+    total_seconds = st.sidebar.number_input("Set total duration (seconds):", min_value=1, value=60)
 
     start_time = st.session_state.get('start_time', datetime.now())
     st.session_state.start_time = start_time
